@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  spotibot:
+    container_name: GoodwillBot
+    image: goodwillbot
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
