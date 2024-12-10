@@ -27,6 +27,7 @@ class Shopgoodwill:
         "block_size": 16,
     }
     FAVORITES_MAX_NOTE_LENGTH = 256
+    INVALID_AUTH_MESSAGE = "The username or password are incorrect"
 
     def shopgoodwill_err_hook(self, res: Response, *args, **kwargs) -> None:
         res.raise_for_status()
@@ -66,9 +67,9 @@ class Shopgoodwill:
             # check if auth token exists, and if it works
             access_token = auth_info.get("access_token", None)
             if access_token and self.access_token_is_valid(access_token):
-                self.shopgoodwill_session.headers[
-                    "Authorization"
-                ] = f"Bearer {access_token}"
+                self.shopgoodwill_session.headers["Authorization"] = (
+                    f"Bearer {access_token}"
+                )
 
             else:
                 if (
@@ -205,12 +206,16 @@ class Shopgoodwill:
 
         self.shopgoodwill_session.hooks["response"] = self.shopgoodwill_err_hook
 
-        res = self.shopgoodwill_session.post(
+        res_json = self.shopgoodwill_session.post(
             Shopgoodwill.API_ROOT + "/SignIn/Login", json=login_params
+        ).json()
+
+        if res_json["message"] == Shopgoodwill.INVALID_AUTH_MESSAGE:
+            raise Exception("Invalid credentials")
+
+        self.shopgoodwill_session.headers["Authorization"] = (
+            f"Bearer {res_json['accessToken']}"
         )
-        self.shopgoodwill_session.headers[
-            "Authorization"
-        ] = f"Bearer {res.json()['accessToken']}"
         # TODO deal with refresh token
 
         return True
