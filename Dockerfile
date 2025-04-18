@@ -1,5 +1,7 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.10-slim
+FROM python:3.13-slim
+
+LABEL org.opencontainers.image.source="https://github.com/tommydzierzak/shopgoodwill-scripts"
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
