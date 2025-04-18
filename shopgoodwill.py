@@ -2,12 +2,14 @@ import base64
 import datetime
 import re
 import urllib.parse
+from copy import deepcopy
 from typing import Dict, List, Optional
 from zoneinfo import ZoneInfo
 
 import requests
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad
+from requests.cookies import RequestsCookieJar
 from requests.exceptions import HTTPError
 from requests.models import PreparedRequest, Response
 
@@ -16,6 +18,16 @@ from requests.models import PreparedRequest, Response
 _SHIPPING_COST_PATTERN = re.compile(
     r"Shipping: <span id='shipping-span'>\$(\d+\.\d+) \(.*\)<\/span>"
 )
+_SGW_BUYERAPI_DOMAIN = "buyerapi.shopgoodwill.com"
+
+
+class IgnoreBuyerApiCookieJar(RequestsCookieJar):
+    def set_cookie(self, cookie, *args, **kwargs):
+        # do not set cookies from buyerapi
+        if cookie.domain == _SGW_BUYERAPI_DOMAIN:
+            return
+
+        super().set_cookie(cookie, *args, **kwargs)
 
 
 class Shopgoodwill:
@@ -55,6 +67,7 @@ class Shopgoodwill:
 
     def __init__(self, auth_info: Optional[Dict] = None):
         self.shopgoodwill_session = requests.Session()
+        self.shopgoodwill_session.cookies = IgnoreBuyerApiCookieJar()
 
         # SGW doesn't take kindly to the default requests user-agent
         self.shopgoodwill_session.headers = {
@@ -400,13 +413,17 @@ class Shopgoodwill:
         :rtype: List[Dict]
         """
 
-        query_json["page"] = 1
-        query_json["pageSize"] = page_size
+        tmp_query_json = deepcopy(query_json)
+
+        tmp_query_json["page"] = 1
+        tmp_query_json["pageSize"] = page_size
         total_listings = list()
+
+        tmp_query_json["searchText"] = tmp_query_json["searchText"].replace('"', "")
 
         while True:
             query_res = self.shopgoodwill_session.post(
-                Shopgoodwill.API_ROOT + "/Search/ItemListing", json=query_json
+                Shopgoodwill.API_ROOT + "/Search/ItemListing", json=tmp_query_json
             )
             page_listings = query_res.json()["searchResults"]["items"]
 
@@ -420,7 +437,7 @@ class Shopgoodwill:
                 return total_listings
 
             else:
-                query_json["page"] += 1
+                tmp_query_json["page"] += 1
                 total_listings += page_listings
 
                 # break if we've seen all that we expect to see
