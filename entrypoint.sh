@@ -4,4 +4,4 @@
 python createConfig.py
 
 # Run the second Python script indefinitely
-exec python shopgoodwill.py
+exec python bid_sniper.py
