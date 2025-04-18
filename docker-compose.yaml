@@ -10,5 +10,5 @@ services:
     environment:
       - USERNAME=USERNAME
       - PASSWORD=PASSWORD
-      - bid_snipe_time_delta=50
+      - bid_snipe_time_delta=50 seconds
     restart: unless-stopped

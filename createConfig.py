@@ -36,6 +36,4 @@ config["bid_sniper"]["bid_snipe_time_delta"] = bid_snipe_time_delta
 with open(output_file, "w") as file:
     json.dump(config, file, indent=4)
 
-print(json.dumps(config, indent=4))
-
 # print(f"Updated config saved to {output_file}")
